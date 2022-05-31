@@ -1,9 +1,11 @@
 package demo;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
 
 import org.springframework.boot.SpringApplication;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
-
 @SpringBootApplication
 public class WebProjectApplication {
 
@@ -30,8 +31,11 @@ public class WebProjectApplication {
 	}
 }
 
+
+@Entity
 class Message {
-	private final String id;
+	@Id
+	private String id;
 	private String content;
 
 	public Message(String id, String content) {
@@ -58,23 +62,31 @@ class Message {
 		return content;
 	}
 
+	public void setId(String id){
+		this.id = id;
+	}
 	public void setContent(String content){
 		this.content = content;
 	}
 }
 
+
 	@RestController
 @RequestMapping("/msgs")
 class RestApiController {
-	private List<Message> msgs = new ArrayList<>();
 
-	public RestApiController() {
-		msgs.addAll(List.of(
+	private final MsgRepository msgRepository;
+
+	public RestApiController(MsgRepository msgRepository) {
+
+		this.msgRepository = msgRepository;
+
+		this.msgRepository.saveAll(List.of(
 				new Message("Message 1"),
 				new Message("Message 2"),
-				new Message("Message 3"),
-				new Message("Message 4")
+				new Message("Message 3")
 		));
+
 	}
 
 	/*@RequestMapping(value = "/msgs", method = RequestMethod.GET)
@@ -84,23 +96,17 @@ class RestApiController {
 
 	@GetMapping
 	Iterable<Message> getMessages(){
-		return msgs;
+		return msgRepository.findAll();
 	}
 
 	@GetMapping("/{id}")
 	Optional<Message> getMessageById(@PathVariable String id){
-		for (Message m : msgs){
-			if(m.getId().equals(id)){
-				return Optional.of(m);
-			}
-		}
-		return Optional.empty();
+		return msgRepository.findById(id);
 	}
 
 	@PostMapping
 	Message postMessage(@RequestBody Message msg){
-		msgs.add(msg);
-		return msg;
+		return msgRepository.save(msg);
 	}
 
 	@PutMapping("/{id}")
@@ -116,19 +122,13 @@ class RestApiController {
 	}*/
 
 	ResponseEntity<Message> putMessage(@PathVariable String id, @RequestBody Message msg) {
-		Integer msgInd = -1;
-		for (Message m : msgs) {
-			if (m.getId().equals(id)) {
-				msgInd = msgs.indexOf(m);
-				msgs.set(msgInd, msg);
-			}
-		}
-		return (msgInd == -1) ? new ResponseEntity<>(postMessage(msg), HttpStatus.CREATED) : new ResponseEntity<>(msg, HttpStatus.OK);
+
+		return (!msgRepository.existById(id)) ? new ResponseEntity<>(msgRepository.save(msg), HttpStatus.CREATED) : new ResponseEntity<>(msgRepository.save(msg), HttpStatus.OK);
 	}
 
 	@DeleteMapping("/{id}")
 	void deleteMessage(@PathVariable String id){
-		msgs.removeIf(m -> m.getId().equals(id));
+		msgRepository.deleteById(id);
 	}
 
 }
