@@ -10,6 +10,8 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.boot.SpringApplication;
@@ -35,11 +37,12 @@ public class WebProjectApplication {
 	}
 }
 
-
+@JsonFormat(shape = JsonFormat.Shape.ARRAY)
 class ResultDetails {
 
 	private Map<String, Object> details = new HashMap<String, Object>();
 
+	public ResultDetails() {};
 	public ResultDetails(String field, String def){
 		this.details.put(field, def);
 	}
@@ -53,6 +56,10 @@ class ResultDetails {
 
 	public Map<String, Object> getDetails(){
 		return details;
+	}
+
+	public void setDetails(String field, Object def){
+		this.details.put(field, def);
 	}
 	/* String-String, String-Int, String-Map<String,String> */
 }
@@ -100,11 +107,6 @@ class Response {
 class RestApiController {
 	private List<Response> records = new ArrayList<>();
 
-
-	/*@RequestMapping(value = "/records", method = RequestMethod.GET)
-	Iterable<Response> getResponses(){
-		return records;
-	}*/
 
 	@GetMapping
 	Iterable<Response> getResponses(){
