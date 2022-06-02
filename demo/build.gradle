@@ -17,6 +17,8 @@ dependencies {
 	testImplementation 'org.apache.httpcomponents:httpclient'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
+	implementation 'javax.json:javax.json-api:1.1.4'
 }
 
 tasks.named('test') {

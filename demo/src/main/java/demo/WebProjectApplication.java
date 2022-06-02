@@ -1,18 +1,23 @@
 package demo;
 
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+import java.nio.charset.Charset;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,105 +35,101 @@ public class WebProjectApplication {
 	}
 }
 
-class Message {
-	private final String id;
-	private String content;
 
-	public Message(String id, String content) {
-		this.id = id;
-		this.content = content;
+class ResultDetails {
+
+	private Map<String, Object> details = new HashMap<String, Object>();
+
+	public ResultDetails(String field, String def){
+		this.details.put(field, def);
+	}
+	public ResultDetails(String field, Integer def){
+		this.details.put(field, def);
 	}
 
-	public Message(String content){
-		this.id = UUID.randomUUID().toString();
-		this.content = content;
+	public ResultDetails(String field, Map<String, String> def){
+		this.details.put(field, def);
 	}
 
-	public Message(){
-		this.id = UUID.randomUUID().toString();
-		this.content = "";
+	public Map<String, Object> getDetails(){
+		return details;
+	}
+	/* String-String, String-Int, String-Map<String,String> */
+}
+@JsonNaming(PropertyNamingStrategy.LowerCaseWithUnderscoresStrategy.class)
+class Response {
+	private String request_id;
+	private String reference;
+	private Map<String, ResultDetails> results = new HashMap<String, ResultDetails>();
+
+	private Map<String, Object> result_info = new HashMap<String, Object>();
+
+	public Response(){};
+
+	public String getRequestId() {
+		return request_id;
+	}
+
+	public String getReference() {
+		return reference;
+	}
+
+	public Map<String, ResultDetails> getResults() {
+		return results;
+	}
+
+	public Map<String, Object> getResultInfo() {
+		return result_info;
 
 	}
 
-	public String getId(){
-		return id;
+	public void setRequestId(String request_id){
+		this.request_id = request_id;
 	}
 
-	public String getContent(){
-		return content;
+	public void setReference(String reference){
+		this.reference = reference;
 	}
 
-	public void setContent(String content){
-		this.content = content;
+	public void setResultInfo(Map<String, Object> result_info){
+		this.result_info = result_info;
 	}
 }
-
 	@RestController
-@RequestMapping("/msgs")
+@RequestMapping("/records")
 class RestApiController {
-	private List<Message> msgs = new ArrayList<>();
+	private List<Response> records = new ArrayList<>();
 
-	public RestApiController() {
-		msgs.addAll(List.of(
-				new Message("Message 1"),
-				new Message("Message 2"),
-				new Message("Message 3"),
-				new Message("Message 4")
-		));
-	}
 
-	/*@RequestMapping(value = "/msgs", method = RequestMethod.GET)
-	Iterable<Message> getMessages(){
-		return msgs;
+	/*@RequestMapping(value = "/records", method = RequestMethod.GET)
+	Iterable<Response> getResponses(){
+		return records;
 	}*/
 
 	@GetMapping
-	Iterable<Message> getMessages(){
-		return msgs;
+	Iterable<Response> getResponses(){
+		return records;
 	}
 
 	@GetMapping("/{id}")
-	Optional<Message> getMessageById(@PathVariable String id){
-		for (Message m : msgs){
-			if(m.getId().equals(id)){
-				return Optional.of(m);
+	Optional<Response> getResponseByRequestId(@PathVariable String id){
+		for (Response r : records){
+			if(r.getRequestId().equals(id)){
+				return Optional.of(r);
 			}
 		}
 		return Optional.empty();
 	}
 
 	@PostMapping
-	Message postMessage(@RequestBody Message msg){
-		msgs.add(msg);
+	Response postResponse(@RequestBody Response msg){
+		records.add(msg);
 		return msg;
 	}
 
-	@PutMapping("/{id}")
-	/*Message putMessage(@PathVariable String id, @RequestBody Message msg){
-		int msgInd = -1;
-		for (Message m: msgs){
-			if(m.getId().equals(id)){
-				msgInd = msgs.indexOf(m);
-				msgs.set(msgInd, msg);
-			}
-		}
-		return (msgInd == -1) ? postMessage(msg) : msg;
-	}*/
-
-	ResponseEntity<Message> putMessage(@PathVariable String id, @RequestBody Message msg) {
-		Integer msgInd = -1;
-		for (Message m : msgs) {
-			if (m.getId().equals(id)) {
-				msgInd = msgs.indexOf(m);
-				msgs.set(msgInd, msg);
-			}
-		}
-		return (msgInd == -1) ? new ResponseEntity<>(postMessage(msg), HttpStatus.CREATED) : new ResponseEntity<>(msg, HttpStatus.OK);
-	}
-
 	@DeleteMapping("/{id}")
-	void deleteMessage(@PathVariable String id){
-		msgs.removeIf(m -> m.getId().equals(id));
+	void deleteResponse(@PathVariable String id){
+		records.removeIf(r -> r.getRequestId().equals(id));
 	}
 
 }
